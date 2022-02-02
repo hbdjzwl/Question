@@ -4,20 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Logging/LogMacros.h"
-#include "SimpleObjectPoolInterface.h"
 #include "ObjectPoolManger.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(ObjectPoolLog, Log, All);
 
-UCLASS(BlueprintType, Blueprintable)
-class ATestActor : public AActor, public ISimpleObjectPoolInterface
-{
-	GENERATED_BODY()
-public:
-	ATestActor();
-	~ATestActor();
-	virtual void PoolInitialize_Implementation() override;
-};
 
 UENUM(BlueprintType)
 enum class EAllocationType : uint8 
@@ -26,24 +16,37 @@ enum class EAllocationType : uint8
 	Eager	/*- ‘§œ»∑÷≈‰ -*/
 };
 
-
 UCLASS(BlueprintType, Blueprintable)
-class AObjectPoolManger : public AActor
+class SIMPLEOBJECTPOOL_API AObjectPoolManger : public AActor
 {
 	GENERATED_BODY()
-public:
 
-	UPROPERTY(EditDefaultsOnly,	BlueprintReadOnly)
+public:
+	friend class ISimpleObjectPoolInterface;
+
+	UPROPERTY(EditAnywhere,	BlueprintReadOnly)
 	TSubclassOf<AActor> ObjectClass;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 500))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 500))
 	int32 PoolMaxSize {1};
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	int32 PoolCurrentSize;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EAllocationType AllocationType;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (EditCondition = "AllocationType == EAllocationType::Lazy"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "AllocationType == EAllocationType::Lazy"))
 	int32 LazyPreallocatedSize {0};
+
+	UFUNCTION(BlueprintCallable)
+	void ClearPool();
+	
+
+	
+
+
+	UFUNCTION(BlueprintCallable)
+	void ForceGarbageCollection();
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -51,11 +54,14 @@ public:
 
 protected:
 	virtual void BeginPlay();
-
 private:
 	void InitializePool();
-	void ClearPool();
 	void SpawnObject(int32 SpawnSize);
+	void PushObject(TWeakObjectPtr<AActor> InObject);
 	UPROPERTY()
 	TArray<AActor*> Pool;
+
+public:
+	AActor* PopObject_Manager(const FTransform& SpawnTransform);
+
 };

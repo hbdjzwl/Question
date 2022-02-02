@@ -9,6 +9,7 @@
 class AObjectPoolManger;
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
+//UINTERFACE(MinimalAPI, meta=(CannotImplementInterfaceInBlueprint))
 class USimpleObjectPoolInterface : public UInterface
 {
 	GENERATED_BODY()
@@ -24,11 +25,23 @@ class SIMPLEOBJECTPOOL_API ISimpleObjectPoolInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 
-	AObjectPoolManger* OwningPool;
+	TWeakObjectPtr<AObjectPoolManger> OwningPool;
+	TWeakObjectPtr<AActor> ThisActorPtr;
 
-	UFUNCTION(BlueprintCallable)
-	virtual void SetObjectPoolManger();
+	//Is called only on the first initialization
+	virtual void ObjectPreinitialized(TWeakObjectPtr<AObjectPoolManger> InOwningPool);
+	//Is called only on the first initialization
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_ObjectPreinitialized();
 
-	UFUNCTION(BlueprintNativeEvent)
-	void PoolInitialize();
+	void PopObject();
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_PopObject();
+
+	//void Begin();
+	void PushObject();
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_PushObject();
+
 };
+

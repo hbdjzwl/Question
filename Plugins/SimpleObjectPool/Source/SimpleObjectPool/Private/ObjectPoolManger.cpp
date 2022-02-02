@@ -1,4 +1,7 @@
 #include "ObjectPoolManger.h"
+#include "SimpleObjectPoolInterface.h"
+
+
 DEFINE_LOG_CATEGORY(ObjectPoolLog);
 
 #if WITH_EDITOR
@@ -17,6 +20,13 @@ void AObjectPoolManger::BeginPlay()
 {
 	Super::BeginPlay();
 	InitializePool();
+
+	UE_LOG(ObjectPoolLog, Warning, TEXT("Number--%i"), Pool.Num());
+
+	for (auto& r : Pool)
+	{
+		UE_LOG(ObjectPoolLog, Warning, TEXT("Name:%s"),*r->GetName());
+	}
 }
 
 void AObjectPoolManger::InitializePool()
@@ -34,6 +44,8 @@ void AObjectPoolManger::InitializePool()
 		return;
 	}
 
+	ClearPool();
+
 	switch (AllocationType)
 	{
 	case EAllocationType::Lazy:
@@ -47,7 +59,6 @@ void AObjectPoolManger::InitializePool()
 		break;
 	}
 
-	ClearPool();
 }
 
 
@@ -56,21 +67,56 @@ void AObjectPoolManger::ClearPool()
 {
 	if (!Pool.IsValidIndex(0)) 
 	{ 
-		UE_LOG(ObjectPoolLog, Log, TEXT("ClearPool() return"));
 		return; 
 	}
 	
-// 	for (int32 ID = Pool.Num() - 1; ID >= 0; --ID)
-// 	{
-// 		if (Pool[ID]->IsValidLowLevelFast())
-// 		{
-// 			Pool[ID]->Destroy(true);
-// 		}
-// 	}
-
+	for (int32 ID = Pool.Num() - 1; ID >= 0; --ID)
+	{
+		if (Pool[ID]->IsValidLowLevelFast())
+		{
+			Pool[ID]->Destroy(true);
+		}
+	}
+	PoolCurrentSize = 0;
 	Pool.Empty();
 	UE_LOG(ObjectPoolLog, Log, TEXT("ClearPool()"));
+}
 
+void AObjectPoolManger::PushObject(TWeakObjectPtr<AActor> InObject)
+{
+	Pool.Add(InObject.Get());
+}
+
+AActor* AObjectPoolManger::PopObject_Manager(const FTransform& SpawnTransform)
+{
+	if (!(Pool.Num() > 0))
+	{
+		if (PoolCurrentSize >= PoolMaxSize)
+		{
+			UE_LOG(ObjectPoolLog, Warning, TEXT("Pool Array Num is 0"));
+			return nullptr;
+		}
+		SpawnObject(1);
+	}
+
+	AActor* LocalPtr = Pool[Pool.Num()-1];
+	LocalPtr->SetActorTransform(SpawnTransform);
+
+	Cast<ISimpleObjectPoolInterface>(LocalPtr)->PopObject();
+
+	Pool.RemoveAt(Pool.Num() - 1);
+
+	for (auto& r : Pool)
+	{
+		UE_LOG(ObjectPoolLog, Warning, TEXT("Number:%i ---- PopName:%s"), Pool.Num(),*r->GetName());
+	}
+
+	return LocalPtr;
+}
+
+void AObjectPoolManger::ForceGarbageCollection()
+{
+	GEngine->ForceGarbageCollection(true);
 }
 
 void AObjectPoolManger::SpawnObject(int32 SpawnSize)
@@ -80,41 +126,21 @@ void AObjectPoolManger::SpawnObject(int32 SpawnSize)
 	{
 		UE_LOG(ObjectPoolLog, Log, TEXT("---- %s"), this->GetOwner() ? TEXT("true") : TEXT("false"));
 
-		//if (auto LocalNewObject = GetWorld()->SpawnActorDeferred<AActor>(ObjectClass, InitTransform, this->GetOwner(), nullptr/*GetOwner()->GetInstigator()*/, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn))
-		if (auto LocalNewObject = GetWorld()->SpawnActor(ObjectClass,&InitTransform))
+		//if (auto LocalNewObject = GetWorld()->SpawnActor(ObjectClass,&InitTransform))
+		if (auto LocalNewObject = GetWorld()->SpawnActorDeferred<AActor>(ObjectClass, InitTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn))
 		{
-			//LocalNewObject->FinishSpawning(InitTransform);
 			Pool.Add(LocalNewObject);
-
+			PoolCurrentSize++;
 			if (ISimpleObjectPoolInterface* ObjectInterface = Cast<ISimpleObjectPoolInterface>(LocalNewObject))
 			{
-				ObjectInterface->OwningPool = this;
-				ObjectInterface->Execute_PoolInitialize(LocalNewObject);
+				ObjectInterface->ObjectPreinitialized(this);
 			}
-			else if(UFunction* p_Func = LocalNewObject->FindFunction("SetObjectPoolManger"))
-			{
-				//ObjectInterface->OwningPool = this;
-				//UObjectProperty* FloatProp;
-				//FloatProp = FindFieldChecked<UObjectProperty>(LocalNewObject->GetClass(), "MyActor");
 
-				LocalNewObject->ProcessEvent(p_Func,nullptr);
-			}
-			
+			LocalNewObject->FinishSpawning(InitTransform);
 		}
 	}
 }
 
-ATestActor::ATestActor()
-{
-	UE_LOG(ObjectPoolLog, Log, TEXT("ATestActoe() --- Construct"));
-}
 
-ATestActor::~ATestActor()
-{
-	UE_LOG(ObjectPoolLog, Log, TEXT("ATestActoe() --- Destruct"));
-}
 
-void ATestActor::PoolInitialize_Implementation()
-{
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,TEXT("C++≥ı ºªØ"));
-}
+
