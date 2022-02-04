@@ -4,8 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "ComboData.h"
 #include "ComboComponent.generated.h"
-
+ 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class QUESTION_API UComboComponent : public UActorComponent
@@ -21,8 +22,23 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		
+	UFUNCTION(BlueprintCallable)
+	void TryComboAttack(FKey InputKey);
+
+public:
+	UPROPERTY(EditAnywhere)
+	UDataTable* ComboConfigData;
+
+	void LoadComboData();
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FKey> InputKeys;
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FComboAnim> ComboAnimArray;
+
+private:
+	FString CurrentKey;
+	ACharacter* OWnerCharacter;
 };
