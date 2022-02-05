@@ -29,10 +29,25 @@ void UComboComponent::TryComboAttack(FKey InputKey)
 {
 	if (InputKeys.Contains(InputKey))
 	{
-		CurrentKey = InputKey.ToString();
-		FComboAnim* LocalCurrentAttack  = &ComboAnimArray[CurrentKey.Len()-1];
-		OWnerCharacter->GetMesh();
+		CurrentKey = CurrentKey + InputKey.ToString();
+		const TMap<FString, FAnimInfo>& CurrentComboAnim = ComboAnimArray[CurrentKey.Len() - 1].ComboAnimInfo;
+		if (const FAnimInfo* LocalAnimMontage = CurrentComboAnim.Find(CurrentKey))
+		{
+			OWnerCharacter->PlayAnimMontage(LocalAnimMontage->AnimMontage);
+			if (LocalAnimMontage->bFinish)
+			{
+				//连招结束
+				CurrentKey.Empty();
+			}
+		}
+		else
+		{
+			//输错按键
+			CurrentKey.Empty();
+		}
 	}
+
+
 }
 
 void UComboComponent::LoadComboData()
@@ -45,7 +60,6 @@ void UComboComponent::LoadComboData()
 
 		for (const auto& CurrentRow : RowName)
 		{
-			
 			FString LocalInputKey;
 
 			//数据表每一行对应一套连招
@@ -53,24 +67,22 @@ void UComboComponent::LoadComboData()
 			{
 				InputKeys.Add(CurrentRow->ComboConfigInfo[i].InputKey);//添加可交互的输入按键
 
-				LocalInputKey = LocalInputKey + CurrentRow->ComboConfigInfo[i].InputKey.ToString();
+				LocalInputKey = LocalInputKey + CurrentRow->ComboConfigInfo[i].InputKey.ToString();	//连招的Key
 				bool bFnish = i + 1 < CurrentRow->ComboConfigInfo.Num() ? false : true;	//是否是最后一个结束技能
 				FAnimInfo LocalAnimInfo{ CurrentRow->ComboConfigInfo[i].AnimMontage ,bFnish };
+				TPair<FString, FAnimInfo> ComboAnimInfo(LocalInputKey, LocalAnimInfo);
 
-// 				TPair<FString, FAnimInfo> a;
-//				TTuple<FString, FAnimInfo> A;
-// 				ComboAnimArray[i].ComboAnimInfo.Add(a);
 
 				FComboAnim* ptr = new FComboAnim();
 				if (i >= ComboAnimArray.Num())
 				{
 					TMap<FString, FAnimInfo> TempMap;
-					TempMap.Add(LocalInputKey,LocalAnimInfo);
+					TempMap.Add(ComboAnimInfo);
 					ComboAnimArray.Add(FComboAnim{ TempMap });
 				}
 				else
 				{
-					ComboAnimArray[i].ComboAnimInfo.Add(LocalInputKey, LocalAnimInfo);
+					ComboAnimArray[i].ComboAnimInfo.Add(ComboAnimInfo);
 				}
 			}
 		}

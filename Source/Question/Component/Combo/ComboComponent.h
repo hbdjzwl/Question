@@ -7,6 +7,8 @@
 #include "ComboData.h"
 #include "ComboComponent.generated.h"
  
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMontagePlayDelegate, FName, NotifyName);
+
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class QUESTION_API UComboComponent : public UActorComponent
@@ -38,7 +40,12 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FComboAnim> ComboAnimArray;
 
+
 private:
 	FString CurrentKey;
 	ACharacter* OWnerCharacter;
+// 	bool bIsAttacking;
+// 	bool bCanGoToNextAttack;
+
 };
+
