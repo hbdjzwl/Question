@@ -29,25 +29,60 @@ void UComboComponent::TryComboAttack(FKey InputKey)
 {
 	if (InputKeys.Contains(InputKey))
 	{
-		CurrentKey = CurrentKey + InputKey.ToString();
-		const TMap<FString, FAnimInfo>& CurrentComboAnim = ComboAnimArray[CurrentKey.Len() - 1].ComboAnimInfo;
-		if (const FAnimInfo* LocalAnimMontage = CurrentComboAnim.Find(CurrentKey))
+		//首次攻击
+		if (!bIsAttacking)
 		{
-			OWnerCharacter->PlayAnimMontage(LocalAnimMontage->AnimMontage);
-			if (LocalAnimMontage->bFinish)
-			{
-				//连招结束
-				CurrentKey.Empty();
-			}
+			bIsAttacking = true;
+			CurrentKey = CurrentKey + InputKey.ToString();
+			ComboAttack();
 		}
-		else
+		//连招攻击
+		else if(!bCanGoToNextAttack)
 		{
-			//输错按键
-			CurrentKey.Empty();
+			bCanGoToNextAttack = true;
+			CurrentKey = CurrentKey + InputKey.ToString();
 		}
 	}
 
 
+}
+
+void UComboComponent::GoToNextAttack()
+{
+	if (bIsAttacking && bCanGoToNextAttack)
+	{
+		bCanGoToNextAttack = false;
+		ComboAttack();
+	}
+
+}
+
+void UComboComponent::ComboAttack()
+{
+	const TMap<FString, FAnimInfo>& CurrentComboAnim = ComboAnimArray[CurrentKey.Len() - 1].ComboAnimInfo;
+
+	/*-------  判断攻击连招是否正确 -------*/
+	if (const FAnimInfo* LocalAnimMontage = CurrentComboAnim.Find(CurrentKey))
+	{
+		OWnerCharacter->PlayAnimMontage(LocalAnimMontage->AnimMontage);
+		if (LocalAnimMontage->bFinish)
+		{
+			//连招结束
+			ResetComboState();
+		}
+	}
+	else
+	{
+		//输错按键
+		ResetComboState();
+	}
+}
+
+void UComboComponent::ResetComboState()
+{
+	bIsAttacking = false;
+	bCanGoToNextAttack = false;
+	CurrentKey.Empty();
 }
 
 void UComboComponent::LoadComboData()

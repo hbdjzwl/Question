@@ -6,9 +6,6 @@
 #include "Components/ActorComponent.h"
 #include "ComboData.h"
 #include "ComboComponent.generated.h"
- 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMontagePlayDelegate, FName, NotifyName);
-
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class QUESTION_API UComboComponent : public UActorComponent
@@ -25,14 +22,26 @@ protected:
 
 public:	
 
+	/*----- ³¢ÊÔ¹¥»÷ -----*/
 	UFUNCTION(BlueprintCallable)
 	void TryComboAttack(FKey InputKey);
+
+	/*----- ÏÂÒ»´Î¹¥»÷ -----*/
+	UFUNCTION(BlueprintCallable)
+	void GoToNextAttack();
+
+	/*----- ÖØÖÃ×´Ì¬ -----*/
+	UFUNCTION(BlueprintCallable)
+	void ResetComboState();
+
+private:
+	void ComboAttack();
+
+	void LoadComboData();
 
 public:
 	UPROPERTY(EditAnywhere)
 	UDataTable* ComboConfigData;
-
-	void LoadComboData();
 
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FKey> InputKeys;
@@ -44,8 +53,7 @@ public:
 private:
 	FString CurrentKey;
 	ACharacter* OWnerCharacter;
-// 	bool bIsAttacking;
-// 	bool bCanGoToNextAttack;
-
+	bool bIsAttacking;
+	bool bCanGoToNextAttack;
 };
 
