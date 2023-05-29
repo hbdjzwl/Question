@@ -19,8 +19,9 @@ UComboComponent::UComboComponent()
 void UComboComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	OWnerCharacter = Cast<ACharacter>(GetOwner());
-	check(OWnerCharacter && TEXT("ComboComponents can only hang on ACharacter!"));
+	OwnerCharacter = Cast<ACharacter>(GetOwner());
+	OwnerAnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
+	check(OwnerCharacter && TEXT("ComboComponents can only hang on ACharacter!"));
 	LoadComboData();
 }
 
@@ -64,7 +65,10 @@ void UComboComponent::ComboAttack()
 	/*-------  判断攻击连招是否正确 -------*/
 	if (const FAnimInfo* LocalAnimMontage = CurrentComboAnim.Find(CurrentKey))
 	{
-		OWnerCharacter->PlayAnimMontage(LocalAnimMontage->AnimMontage);
+		OwnerCharacter->PlayAnimMontage(LocalAnimMontage->AnimMontage);
+		OwnerAnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this, &UComboComponent::OnNotifyBeginReceive);
+		OwnerAnimInstance->OnPlayMontageNotifyEnd.AddDynamic(this, &UComboComponent::OnNotifyEndReceive);
+
 		if (LocalAnimMontage->bFinish)
 		{
 			//连招结束
@@ -124,3 +128,13 @@ void UComboComponent::LoadComboData()
 	}
 }
 
+void UComboComponent::OnNotifyBeginReceive(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload)
+{
+	
+	//OnNotifyBegin.ExecuteIfBound(NotifyName, BranchingPointPayload);
+}
+
+void UComboComponent::OnNotifyEndReceive(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload)
+{
+	//OnNotifyEnd.ExecuteIfBound(NotifyName, BranchingPointPayload);
+}

@@ -39,6 +39,9 @@ private:
 
 	void LoadComboData();
 
+	void OnNotifyBeginReceive(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+	void OnNotifyEndReceive(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+
 public:
 	UPROPERTY(EditAnywhere)
 	UDataTable* ComboConfigData;
@@ -49,10 +52,16 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FComboAnim> ComboAnimArray;
 
+	//UPROPERTY(BlueprintAssignable)
+	FPlayMontageAnimNotifyDelegate OnNotifyBegin;
+	//UPROPERTY(BlueprintAssignable)
+	FPlayMontageAnimNotifyDelegate OnNotifyEnd;
+
 
 private:
 	FString CurrentKey;
-	ACharacter* OWnerCharacter;
+	ACharacter* OwnerCharacter;
+	UAnimInstance* OwnerAnimInstance;
 	bool bIsAttacking;
 	bool bCanGoToNextAttack;
 };

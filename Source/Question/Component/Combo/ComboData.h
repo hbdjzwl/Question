@@ -14,10 +14,10 @@ struct QUESTION_API FAnimInfo
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Table")
+	UPROPERTY(/*EditDefaultsOnly, */BlueprintReadOnly, Category = "Table")
 	UAnimMontage* AnimMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Table")
+	UPROPERTY(/*EditDefaultsOnly, */BlueprintReadOnly, Category = "Table")
 	bool bFinish;
 };
 
@@ -26,7 +26,7 @@ struct QUESTION_API FComboAnim
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Table")
+	UPROPERTY(/*EditDefaultsOnly, */BlueprintReadOnly, Category = "Table")
 	TMap<FString, FAnimInfo> ComboAnimInfo;
 };
 /*end-------------- ComboComponent 保存当前连招信息 -------------*/
